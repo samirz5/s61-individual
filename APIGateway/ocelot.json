@@ -1,0 +1,77 @@
+{
+  "Routes": [
+    
+      //Login service
+    {
+      "DownstreamPathTemplate": "/login",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "login-service",
+          "Port": 83
+        }
+      ],
+      "UpstreamPathTemplate": "/auth-service/login",
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1s",
+        "PeriodTimespan": 1,
+        "Limit": 1
+      },
+      "DangerousAcceptAnyServerCertificateValidator": true
+    },
+
+
+    {
+      "DownstreamPathTemplate": "/register",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "login-service",
+          "Port": 83
+        }
+      ],
+      "UpstreamPathTemplate": "/auth-service/register",
+      "UpstreamHttpMethod": [ "POST" ],
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1s",
+        "PeriodTimespan": 1,
+        "Limit": 1
+      },
+      "DangerousAcceptAnyServerCertificateValidator": true
+    },
+
+
+    {
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Iets",
+        "AllowedScopes": []
+      },
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "tweet-service",
+          "Port": 83
+        }
+      ],
+      "DownstreamPathTemplate": "/recentTweets",
+      "DownstreamScheme": "http",
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1s",
+        "PeriodTimespan": 1,
+        "Limit": 1
+      },
+      "UpstreamHttpMethod": [ "Get" ],
+      "UpstreamPathTemplate": "/tweet-service/recentTweets",
+      "DangerousAcceptAnyServerCertificateValidator": true
+    }
+    
+  ],
+  "GlobalConfiguration": {
+    //"BaseUrl": "https://localhost:44366"
+  }
+}

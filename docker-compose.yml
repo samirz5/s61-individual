@@ -1,0 +1,55 @@
+version: '3.4'
+
+services:
+  apigateway:
+    image: ${DOCKER_REGISTRY-}apigateway
+    build:
+      context: .
+      dockerfile: APIGateway/Dockerfile
+
+  login-service:
+    image: ${DOCKER_REGISTRY-}loginservice
+    build:
+      context: .
+      dockerfile: Login-Service/Dockerfile
+
+  tweet-service:
+    image: ${DOCKER_REGISTRY-}tweetservice
+    build:
+      context: .
+      dockerfile: Tweet-Service/Dockerfile
+
+  db:
+    image: postgres
+    container_name: Database
+    restart: always
+    environment:
+      POSTGRES_USER: admin  
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - 5432:5432
+
+  adminer:
+    image: adminer
+    container_name: DatabaseUI
+    restart: always
+    ports:
+      - 8001:8080
+
+  zookeeper:
+    image: zookeeper
+    restart: always
+    ports:
+      - 2181:2181
+
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      KAFKA_CREATE_TOPICS: "trend_topic:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
