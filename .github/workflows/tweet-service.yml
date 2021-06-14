@@ -7,7 +7,7 @@ on:
       - Tweet-Service/**
       - .github/workflows/tweet-service.yml
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
     paths:
       - Tweet-Service/**
       - .github/workflows/tweet-service.yml
