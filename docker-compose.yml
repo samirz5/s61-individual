@@ -53,3 +53,10 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
+
+  userservice:
+    image: ${DOCKER_REGISTRY-}userservice
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+
