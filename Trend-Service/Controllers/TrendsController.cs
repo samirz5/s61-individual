@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Trend_Service.Context;
+using Trend_Service.Interfaces;
 using Trend_Service.Models;
 
 namespace Trend_Service.Controllers
@@ -15,10 +16,12 @@ namespace Trend_Service.Controllers
     public class TrendsController : ControllerBase
     {
         private readonly TrendServiceContext _context;
+        private readonly ITrendService _trendService;
 
-        public TrendsController(TrendServiceContext context)
+        public TrendsController(TrendServiceContext context, ITrendService trendService)
         {
             _context = context;
+            _trendService = trendService;
         }
 
         // GET: api/Trends
@@ -26,6 +29,13 @@ namespace Trend_Service.Controllers
         public async Task<ActionResult<IEnumerable<Trend>>> GetTrend()
         {
             return await _context.Trend.ToListAsync();
+        }
+
+        // GET: /toptrends
+        [HttpGet("/toptrends")]
+        public  IEnumerable<TrendDTO> GetTopTrends()
+        {
+            return _trendService.GetTopTrends();
         }
 
         // GET: api/Trends/5

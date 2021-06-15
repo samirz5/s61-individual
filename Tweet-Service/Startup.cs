@@ -79,7 +79,7 @@ namespace Tweet_Service
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tweet_Service v1"));
             }
-            tweetServiceContext.Database.EnsureCreated();
+            //tweetServiceContext.Database.EnsureCreated();
             app.UseCors();
             //app.UseHttpsRedirection();
 

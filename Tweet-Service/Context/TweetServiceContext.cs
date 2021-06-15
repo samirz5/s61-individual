@@ -1,9 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
 using Tweet_Service.Models;
 using Tweet_Service.Models.Config;
 
@@ -24,6 +19,6 @@ namespace Tweet_Service.Context
       
         public DbSet<Tweet> Tweet { get; set; }
         public DbSet<Mention> Mention { get; set; }
-    
+
     }
 }

@@ -31,15 +31,14 @@ namespace Tweet_Service.Controllers
             _context = context;
         }
 
-        // GET: api/<TweetsController>
+        // GET: /userTweets/{id}
         [HttpGet("/userTweets/{id}")]
         public ActionResult<IEnumerable<Tweet>> GetUserTweets(Guid id)
         {
             var tweets = _tweetService.GetUserTweets(id);
             return Ok(tweets);
         }
-
-        // GET: api/<TweetsController>
+        
         [HttpGet("/recentTweets")]
         public ActionResult<IEnumerable<Tweet>> GetRecentTweets()
         {
@@ -47,12 +46,17 @@ namespace Tweet_Service.Controllers
             return Ok(tweets);
         }
 
-        // GET: api/<TweetsController>
-        [HttpGet("/mentionedTweets")]
-        public async Task<ActionResult<IEnumerable<Tweet>>> GetMentionedTweetsAsync()
+        [HttpGet("/mentionedTweets/{userName}")]
+        public async Task<ActionResult<IEnumerable<Tweet>>> GetMentionedTweetsAsync(string userName)
         {
-            var tweets = await _tweetService.GetTweetsByMentionAsync();
+            var tweets = await _tweetService.GetTweetsByMentionAsync(userName);
             return Ok(tweets);
+        }
+
+        public ActionResult<IEnumerable<Tweet>> GetTweetsOfFollowers()
+        {
+
+            return null;
         }
 
         // GET api/<TweetsController>/5

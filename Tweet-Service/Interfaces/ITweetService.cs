@@ -13,6 +13,8 @@ namespace Tweet_Service.Interfaces
         IEnumerable<Tweet> GetUserTweets(Guid userId);
         IEnumerable<Tweet> GetMostRecentTweets();
         IEnumerable<Tweet> GetTweetsByTrend(string trend);
-        Task<IEnumerable<Mention>> GetTweetsByMentionAsync();
+        Task<IEnumerable<Mention>> GetTweetsByMentionAsync(string userName);
+
+        Task<IEnumerable<Tweet>> GetTweetsOfFollowers();
     }
 }

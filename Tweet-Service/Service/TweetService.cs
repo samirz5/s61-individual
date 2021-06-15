@@ -1,5 +1,6 @@
 ﻿using Confluent.Kafka;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,16 +15,21 @@ namespace Tweet_Service.Service
 {
     public class TweetService : ITweetService
     {
+        private readonly IConfiguration _config;
+        private readonly string _urlUserService;
         private readonly TweetServiceContext _context;
-        private static readonly HttpClient client = new HttpClient();
+        private static readonly HttpClient client = new();
         private readonly string topic = "trend_topic";
-        private readonly ProducerConfig config = new ProducerConfig
+        private readonly ProducerConfig config = new()
         {
             BootstrapServers = "localhost:9092"
         };
-        public TweetService(TweetServiceContext context)
+        public TweetService(TweetServiceContext context, IConfiguration config)
         {          
             _context = context;
+            _config = config;
+            _urlUserService = config.GetValue<string>("Url:UserService");
+
         }
 
         public async Task<Tweet> CreateTweet(Tweet tweet)
@@ -35,35 +41,11 @@ namespace Tweet_Service.Service
             await _context.AddAsync(tweet);
             await _context.SaveChangesAsync();
 
-            if (tweet.Message.Contains("@"))
-            {
-                var userNamesInTweet = GetSubStringAfterTag(tweet.Message, "@");
-                foreach (var userName in userNamesInTweet)
-                {
-                    var user = await GetUserByUserName(userName);
-                    if(user != null)
-                    {
-                        // TODO: Check wheter to save userId or userName.
-                        await AddMention(userName, tweet.Id);
-                    }                   
-                    
-                }
-            }
-            
-            if (tweet.Message.Contains("#"))
-            {
-                var trends = GetSubStringAfterTag(tweet.Message, "#");
-                foreach (var trend in trends)
-                {
-                    SendToKafka(topic, trend);
-                }
-            }
-
-            /*var kafkaContext = new KafkaContext(_config);
-            kafkaContext.SendRideToKafkaTopic(ride);*/
+            await CheckTweetForTagsAsync(tweet);
 
             return tweet;
         }
+        
 
         public Tweet GetById(Guid id)
         {
@@ -85,13 +67,17 @@ namespace Tweet_Service.Service
             return _context.Tweet.Where(e => e.UserId == userId);
         }
 
-        private List<string> GetSubStringAfterTag(string tweet, string tag)
+        private List<string> GetSubStringAfterTag(string tweet, string tag, bool withTag)
         {
             string[] words = tweet.Split(" ");
             List<string> subStrings = new List<string>();
             foreach (var word in words)
             {
-                if (word.StartsWith(tag))
+                if (word.StartsWith(tag) && withTag)
+                {
+                    subStrings.Add(word);
+                }
+                if (word.StartsWith(tag) && !withTag)
                 {                    
                      subStrings.Add(word.Substring(1));
                 }
@@ -109,22 +95,52 @@ namespace Tweet_Service.Service
            await _context.AddAsync(mention);
            await _context.SaveChangesAsync();
         }
-        private void AddTrend()
-        {
-            // send with kafka to trend service.
-        }
 
-        public async Task<IEnumerable<Mention>> GetTweetsByMentionAsync()
+        public async Task<IEnumerable<Mention>> GetTweetsByMentionAsync(string userName)
         {
             //TODO: remove hardcoded and implement getting userName from token or from frontend.
-            var tweets = await _context.Mention.Include(x => x.tweet).Where(x => x.UserName == "samir").ToListAsync();
+            var tweets = await _context.Mention.Include(x => x.tweet).Where(x => x.UserName == userName).ToListAsync();
             return tweets.OrderByDescending(x => x.tweet.CreatedDate);
+        }
+
+        private async Task CheckTweetForTagsAsync(Tweet tweet)
+        {
+            if (tweet.Message.Contains("@"))
+            {
+                var userNamesInTweet = GetSubStringAfterTag(tweet.Message, "@", false);
+                foreach (var userName in userNamesInTweet)
+                {
+                    var user = await GetUserByUserName(userName);
+                    if (user != null)
+                    {
+                        // TODO: Check wheter to save userId or userName.
+                        await AddMention(userName, tweet.Id);
+                    }
+
+                }
+            }
+
+            if (tweet.Message.Contains("#"))
+            {
+                var trends = GetSubStringAfterTag(tweet.Message, "#", true);
+                foreach (var trend in trends)
+                {
+                    TrendDTO trendDto = new()
+                    {
+                        TweetId = tweet.Id,
+                        Name = trend,
+                        CreatedDate = tweet.CreatedDate
+                    };
+                    SendTrendToKafka(topic, trendDto);
+                }
+            }
         }
 
         private async Task<UserDTO> GetUserByUserName(string userName)
         {
+            string endPoint = "getByUserName/";
             //TODO: remove hardcoded url.
-            var content = await client.GetStringAsync("http://localhost:18924/getByUserName/" + userName);
+            var content = await client.GetStringAsync(_urlUserService + endPoint + userName);
             if (content == "")
             {
                 return null;
@@ -133,23 +149,28 @@ namespace Tweet_Service.Service
 
         }
 
-        private void SendToKafka(string topic, string message)
+        private void SendTrendToKafka(string topic, TrendDTO message)
         {
-            using (var producer =
-                new ProducerBuilder<Null, string>(config).Build())
+            using var producer =
+                new ProducerBuilder<Null, string>(config).Build();
+            try
             {
-                try
-                {
-                    var test = producer.ProduceAsync(topic, new Message<Null, string> { Value = message })
-                        .GetAwaiter()
-                        .GetResult();
-                    Console.WriteLine(test);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine($"Oops, something went wrong: {e}");
-                }
+                var response = producer.ProduceAsync(topic, new Message<Null, string> { Value = JsonSerializer.Serialize(message) })
+                    .GetAwaiter()
+                    .GetResult();
+                Console.WriteLine(response);
             }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Oops, something went wrong: {e}");
+            }
+        }
+
+        public Task<IEnumerable<Tweet>> GetTweetsOfFollowers()
+        {
+
+
+            return null;
         }
     }
 }
