@@ -2,12 +2,12 @@ name: UserFlow
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
     paths:
       - User-Service/**
       - .github/workflows/user-service.yml
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
     paths:
       - User-Service/**
       - .github/workflows/user-service.yml
