@@ -4,12 +4,12 @@ on:
   push:
     branches: [ main, dev ]
     paths:
-      - User-Service/**
+      - UserService/**
       - .github/workflows/user-service.yml
   pull_request:
     branches: [ main, dev ]
     paths:
-      - User-Service/**
+      - UserService/**
       - .github/workflows/user-service.yml
 
 jobs:
@@ -24,20 +24,20 @@ jobs:
         dotnet-version: 5.0.x
     - name: Restore dependencies
       run: dotnet restore
-      working-directory: User-Service
+      working-directory: UserService
     - name: Build
       run: dotnet build --no-restore 
-      working-directory: User-Service
+      working-directory: UserService
     - name: Test
       run: dotnet test --no-build --verbosity normal
-      working-directory: User-Service
+      working-directory: UserService
     - name: Build and Push Image
       uses: mr-smithers-excellent/docker-build-push@v5.5
       with:
         image: samirz5/user-service
         tags: latest
         registry: docker.io
-        dockerfile: User-Service/Dockerfile
+        dockerfile: UserService/Dockerfile
         directory: .
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
