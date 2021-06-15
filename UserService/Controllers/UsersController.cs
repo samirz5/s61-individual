@@ -42,6 +42,16 @@ namespace UserService.Controllers
             return _context.User.Where(x => x.UserName == userName).FirstOrDefault();
         }
 
+        [HttpGet("/getFollowingUserNames")]
+        public ActionResult<IEnumerable<string>> GetFollowingUserNames(string userName)
+        {
+
+            var followingUserNames = _context.Following.Where(x => x.MyUserName == userName).Select(x => x.FollowingUserName).ToList();
+
+            return followingUserNames;
+        }
+
+
         // GET: api/Users
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUser()

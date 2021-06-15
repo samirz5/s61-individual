@@ -30,6 +30,8 @@ namespace UserService.Context
         }*/
 
         public DbSet<User> User { get; set; }
+        public DbSet<Following> Following { get; set; }
+        public DbSet<Follower> Follower { get; set; }
 
     }
 }
