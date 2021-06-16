@@ -51,7 +51,8 @@ namespace Trend_Service
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Trend_Service", Version = "v1" });
             });
 
-            services.AddDbContext<TrendServiceContext>(options => options.UseNpgsql("Host=localhost; port=8765; Database=TrendService; Username=postgres; Password=Grutrofvod1!"));
+            var test = Configuration.GetConnectionString("DockerDBConnection");
+            services.AddDbContext<TrendServiceContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DockerDBConnection")));
 
             services.AddScoped<ITrendService, TrendService>();
 
@@ -83,7 +84,7 @@ namespace Trend_Service
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Trend_Service v1"));
             }
 
-            context.Database.EnsureCreated();
+            //context.Database.EnsureCreated();
             // app.UseHttpsRedirection();
 
             app.UseRouting();

@@ -48,7 +48,7 @@ namespace Tweet_Service
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Tweet_Service", Version = "v1" });
             });
-            services.AddDbContext<TweetServiceContext>(options => options.UseNpgsql("Host=localhost; port=8765; Database=TweetService; Username=postgres; Password=Grutrofvod1!"));
+            services.AddDbContext<TweetServiceContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DockerDBConnection")));
 
             services.AddScoped<ITweetService, TweetService>();
 
@@ -79,7 +79,7 @@ namespace Tweet_Service
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Tweet_Service v1"));
             }
-            tweetServiceContext.Database.EnsureCreated();
+            //tweetServiceContext.Database.EnsureCreated();
             app.UseCors();
             //app.UseHttpsRedirection();
 

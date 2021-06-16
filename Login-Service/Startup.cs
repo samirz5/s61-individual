@@ -63,7 +63,8 @@ namespace Login_Service
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Login_Service", Version = "v1" });
             });
-            services.AddDbContext<UserContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DatabaseConnection")));
+            
+            services.AddDbContext<UserContext>(options => options.UseNpgsql(Configuration.GetConnectionString("DockerDBConnection")));
 
             services.AddScoped<IUserService ,UserService>();
         }

@@ -19,15 +19,66 @@ services:
       context: .
       dockerfile: Tweet-Service/Dockerfile
 
-  db:
+  userservice:
+    image: ${DOCKER_REGISTRY-}userservice
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+
+  trend-service:
+    image: ${DOCKER_REGISTRY-}trendservice
+    build:
+      context: .
+      dockerfile: Trend-Service/Dockerfile
+
+
+  authdb:
     image: postgres
-    container_name: Database
+    container_name: AuthDB
     restart: always
     environment:
       POSTGRES_USER: admin  
       POSTGRES_PASSWORD: admin1234
     ports:
-      - 5432:5432
+      - 5801:5432
+    volumes:
+      - authdb_data:/var/lib/postgresql/data 
+
+  tweetdb:
+    image: postgres
+    container_name: TweetDB
+    restart: always
+    environment:
+      POSTGRES_USER: admin  
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - 5802:5432
+    volumes:
+      - tweetdb_data:/var/lib/postgresql/data 
+
+  userdb:
+    image: postgres
+    container_name: UserDB
+    restart: always
+    environment:
+      POSTGRES_USER: admin  
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - 5803:5432
+    volumes:
+      - userdb_data:/var/lib/postgresql/data 
+
+  trenddb:
+    image: postgres
+    container_name: TrendDB
+    restart: always
+    environment:
+      POSTGRES_USER: admin  
+      POSTGRES_PASSWORD: admin1234
+    ports:
+      - 5804:5432
+    volumes:
+      - trenddb_data:/var/lib/postgresql/data 
 
   adminer:
     image: adminer
@@ -45,18 +96,21 @@ services:
   kafka:
     image: wurstmeister/kafka
     ports:
-      - 9092:9092
+      - "9092:9092"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_CREATE_TOPICS: "trend_topic:1:1;"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
-
-  userservice:
-    image: ${DOCKER_REGISTRY-}userservice
-    build:
-      context: .
-      dockerfile: UserService/Dockerfile
+volumes:
+  authdb_data:
+    driver: local
+  tweetdb_data:
+    driver: local
+  userdb_data:
+    driver: local
+  trenddb_data:
+    driver: local
 

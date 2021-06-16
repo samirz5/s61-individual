@@ -15,7 +15,7 @@ namespace Tweet_Service.Service
 
         public TrendService(IConfiguration config)
         {
-            _urlTrendService = config.GetValue<string>("Url:TrendService");
+            _urlTrendService = config.GetValue<string>("UrlDocker:TrendService");
         }
 
         public async Task<List<Guid>> GetTweetIdsOfTrend(string trend)

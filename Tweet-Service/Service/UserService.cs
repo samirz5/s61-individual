@@ -17,7 +17,7 @@ namespace Tweet_Service.Service
 
         public UserService(IConfiguration config)
         {
-            _urlUserService = config.GetValue<string>("Url:UserService");
+            _urlUserService = config.GetValue<string>("UrlDocker:UserService");
         }
 
         public async Task<List<string>> GetUserNamesFollowing(string userName)

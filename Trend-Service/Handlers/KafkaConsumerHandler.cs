@@ -1,4 +1,5 @@
 ﻿using Confluent.Kafka;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -16,12 +17,46 @@ namespace Trend_Service.Handlers
     {
         private readonly string topic = "trend_topic";
         private readonly IServiceScopeFactory scopeFactory;
+        private static IConfiguration _config;
 
-        public KafkaConsumerHandler(IServiceScopeFactory scopeFactory)
+        public KafkaConsumerHandler(IServiceScopeFactory scopeFactory, IConfiguration config)
         {
             this.scopeFactory = scopeFactory;
+            _config = config;
         }
-/*
+
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            using var scope = scopeFactory.CreateScope();
+            var trendService = scope.ServiceProvider.GetRequiredService<ITrendService>();
+            string kafkaUrl = _config.GetValue<string>("UrlDocker:Kafka");
+            var conf = new ConsumerConfig
+            {
+                GroupId = "st_consumer_group",
+                BootstrapServers = kafkaUrl,
+                AutoOffsetReset = AutoOffsetReset.Earliest
+            };
+
+            await Task.Run(() =>
+            {
+                using var builder = new ConsumerBuilder<Ignore, string>(conf).Build();
+                builder.Subscribe(topic);
+
+                while (!stoppingToken.IsCancellationRequested)
+                {
+                    var consumer = builder.Consume(stoppingToken);
+                    var trend = JsonSerializer.Deserialize<Trend>(consumer.Message.Value);
+                    Console.WriteLine($"Message: {consumer.Message.Value} received from {consumer.TopicPartitionOffset}");
+
+                    trendService.CreateTrend(trend);
+                }
+                builder.Close();
+            }, stoppingToken);
+        }
+
+
+        /*
         public Task StartAsync(CancellationToken cancellationToken)
         {
             using var scope = scopeFactory.CreateScope();
@@ -63,36 +98,5 @@ namespace Trend_Service.Handlers
         {
             return Task.CompletedTask;
         }*/
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            using var scope = scopeFactory.CreateScope();
-            var trendService = scope.ServiceProvider.GetRequiredService<ITrendService>();
-
-            var conf = new ConsumerConfig
-            {
-                GroupId = "st_consumer_group",
-                BootstrapServers = "localhost:9092",
-                AutoOffsetReset = AutoOffsetReset.Earliest
-            };
-
-            await Task.Run(() =>
-            {
-                using (var builder = new ConsumerBuilder<Ignore, string>(conf).Build())
-                {
-                    builder.Subscribe(topic);
-
-                    while (!stoppingToken.IsCancellationRequested)
-                    {
-                        var consumer = builder.Consume(stoppingToken);
-                        var trend = JsonSerializer.Deserialize<Trend>(consumer.Message.Value);
-                        Console.WriteLine($"Message: {consumer.Message.Value} received from {consumer.TopicPartitionOffset}");
-
-                        trendService.CreateTrend(trend);
-                    }
-                    builder.Close();
-                }
-            });
-        }
     }
 }

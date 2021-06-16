@@ -5,6 +5,7 @@
     <RootNamespace>Trend_Service</RootNamespace>
     <UserSecretsId>58321b16-7cbd-40a8-9664-e8e3c8556020</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>

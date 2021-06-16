@@ -28,7 +28,7 @@ namespace Tweet_Service.Service
             _context = context;
             _userService = new UserService(config);
             _trendService = new TrendService(config);
-            _kafkaProducer = new KafkaProducer();
+            _kafkaProducer = new KafkaProducer(config);
         }
 
         #region Getting Tweets
@@ -40,17 +40,6 @@ namespace Tweet_Service.Service
         {
             List<string> userNamesListFollowing = await _userService.GetUserNamesFollowing(userName);
             userNamesListFollowing.Add(userName);
-
-            /*string endPoint = "getFollowingUserNames/";
-            var content = await client.GetStringAsync(_urlUserService + endPoint + userName);
-            var userNamesList = JsonSerializer.Deserialize<List<string>>(content);
-            userNamesList.Add(userName);*/
-
-            /*var tweets = (from p in _context.Tweet
-                          where userNamesListFollowing.Any(w => p.UserName.Contains(w))
-                          select p).ToList();*/
-
-
 
             var tweets = new List<Tweet>();
             foreach (var item in userNamesListFollowing)
