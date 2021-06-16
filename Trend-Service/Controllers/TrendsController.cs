@@ -38,6 +38,13 @@ namespace Trend_Service.Controllers
             return _trendService.GetTopTrends();
         }
 
+        [HttpGet("/tweetIdsByTrend/{trend}")]
+        public async Task<ActionResult<IEnumerable<Guid>>> GetTweetidsByTrendAsync(string trend)
+        {
+            string withHastag = "#" + trend;
+            return await _context.Trend.Where(x => x.Name == withHastag).Select(y => y.TweetId).ToListAsync();
+        }
+
         // GET: api/Trends/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Trend>> GetTrend(Guid id)

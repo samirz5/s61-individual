@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Tweet_Service.Context;
@@ -15,22 +16,69 @@ namespace Tweet_Service.Service
 {
     public class TweetService : ITweetService
     {
-        private readonly IConfiguration _config;
-        private readonly string _urlUserService;
-        private readonly TweetServiceContext _context;
-        private static readonly HttpClient client = new();
-        private readonly string topic = "trend_topic";
-        private readonly ProducerConfig config = new()
-        {
-            BootstrapServers = "localhost:9092"
-        };
-        public TweetService(TweetServiceContext context, IConfiguration config)
-        {          
-            _context = context;
-            _config = config;
-            _urlUserService = config.GetValue<string>("Url:UserService");
 
+        private readonly TweetServiceContext _context;
+        private readonly UserService _userService;
+        private readonly TrendService _trendService;
+        private readonly KafkaProducer _kafkaProducer;
+        private readonly string trendTopic = "trend_topic";
+
+        public TweetService(TweetServiceContext context, IConfiguration config)
+        {
+            _context = context;
+            _userService = new UserService(config);
+            _trendService = new TrendService(config);
+            _kafkaProducer = new KafkaProducer();
         }
+
+        #region Getting Tweets
+        public IEnumerable<Tweet> GetMostRecentTweets()
+        {
+            return _context.Tweet.OrderByDescending(e => e.CreatedDate);
+        }
+        public async Task<IEnumerable<Tweet>> GetTweetsOfFollowers(string userName)
+        {
+            List<string> userNamesListFollowing = await _userService.GetUserNamesFollowing(userName);
+            userNamesListFollowing.Add(userName);
+
+            /*string endPoint = "getFollowingUserNames/";
+            var content = await client.GetStringAsync(_urlUserService + endPoint + userName);
+            var userNamesList = JsonSerializer.Deserialize<List<string>>(content);
+            userNamesList.Add(userName);*/
+
+            /*var tweets = (from p in _context.Tweet
+                          where userNamesListFollowing.Any(w => p.UserName.Contains(w))
+                          select p).ToList();*/
+
+
+
+            var tweets = new List<Tweet>();
+            foreach (var item in userNamesListFollowing)
+            {
+                var tweetsOfUser = await _context.Tweet.Where(x => x.UserName == item).ToListAsync();
+                tweets.AddRange(tweetsOfUser);
+            }
+
+            return tweets.OrderByDescending(x => x.CreatedDate);
+        }
+        public IEnumerable<Tweet> GetUserTweets(string userName)
+        {
+            return _context.Tweet.Where(e => e.UserName == userName);
+        }
+        public async Task<IEnumerable<Mention>> GetTweetsByMentionAsync(string userName)
+        {
+            var tweets = await _context.Mention.Include(x => x.Tweet).Where(x => x.UserName == userName).ToListAsync();
+            return tweets.OrderByDescending(x => x.Tweet.CreatedDate);
+        }
+        public async Task<IEnumerable<Tweet>> GetTweetsByTrend(string trend)
+        {
+            List<Guid> tweetIds = await _trendService.GetTweetIdsOfTrend(trend);
+
+            var tweets = _context.Tweet
+                               .Where(t => tweetIds.Contains(t.Id));
+            return tweets;
+        }
+        #endregion
 
         public async Task<Tweet> CreateTweet(Tweet tweet)
         {
@@ -45,28 +93,13 @@ namespace Tweet_Service.Service
 
             return tweet;
         }
-        
 
         public Tweet GetById(Guid id)
         {
             return _context.Tweet.Find(id);
         }
 
-        public IEnumerable<Tweet> GetMostRecentTweets()
-        {
-            return _context.Tweet.OrderByDescending(e => e.CreatedDate);
-        }
-
-        public IEnumerable<Tweet> GetTweetsByTrend(string trend)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<Tweet> GetUserTweets(Guid userId)
-        {
-            return _context.Tweet.Where(e => e.UserId == userId);
-        }
-
+        #region Private Functions
         private List<string> GetSubStringAfterTag(string tweet, string tag, bool withTag)
         {
             string[] words = tweet.Split(" ");
@@ -78,13 +111,12 @@ namespace Tweet_Service.Service
                     subStrings.Add(word);
                 }
                 if (word.StartsWith(tag) && !withTag)
-                {                    
-                     subStrings.Add(word.Substring(1));
+                {
+                    subStrings.Add(word.Substring(1));
                 }
             }
             return subStrings;
         }
-
         private async Task AddMention(string userName, Guid tweetId)
         {
             Mention mention = new Mention();
@@ -92,17 +124,9 @@ namespace Tweet_Service.Service
             mention.TweetId = tweetId;
             mention.UserName = userName;
 
-           await _context.AddAsync(mention);
-           await _context.SaveChangesAsync();
-        }
-
-        public async Task<IEnumerable<Mention>> GetTweetsByMentionAsync(string userName)
-        {
-            //TODO: remove hardcoded and implement getting userName from token or from frontend.
-            var tweets = await _context.Mention.Include(x => x.tweet).Where(x => x.UserName == userName).ToListAsync();
-            return tweets.OrderByDescending(x => x.tweet.CreatedDate);
-        }
-
+            await _context.AddAsync(mention);
+            await _context.SaveChangesAsync();
+        }       
         private async Task CheckTweetForTagsAsync(Tweet tweet)
         {
             if (tweet.Message.Contains("@"))
@@ -110,7 +134,7 @@ namespace Tweet_Service.Service
                 var userNamesInTweet = GetSubStringAfterTag(tweet.Message, "@", false);
                 foreach (var userName in userNamesInTweet)
                 {
-                    var user = await GetUserByUserName(userName);
+                    var user = await _userService.GetUserByUserName(userName);
                     if (user != null)
                     {
                         // TODO: Check wheter to save userId or userName.
@@ -131,46 +155,19 @@ namespace Tweet_Service.Service
                         Name = trend,
                         CreatedDate = tweet.CreatedDate
                     };
-                    SendTrendToKafka(topic, trendDto);
+                   _kafkaProducer.SendTrendToKafka(trendTopic, trendDto);
                 }
             }
         }
-
-        private async Task<UserDTO> GetUserByUserName(string userName)
-        {
-            string endPoint = "getByUserName/";
-            //TODO: remove hardcoded url.
-            var content = await client.GetStringAsync(_urlUserService + endPoint + userName);
-            if (content == "")
-            {
-                return null;
-            }
-            return JsonSerializer.Deserialize<UserDTO>(content);
-
-        }
-
-        private void SendTrendToKafka(string topic, TrendDTO message)
-        {
-            using var producer =
-                new ProducerBuilder<Null, string>(config).Build();
-            try
-            {
-                var response = producer.ProduceAsync(topic, new Message<Null, string> { Value = JsonSerializer.Serialize(message) })
-                    .GetAwaiter()
-                    .GetResult();
-                Console.WriteLine(response);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Oops, something went wrong: {e}");
-            }
-        }
-
-        public Task<IEnumerable<Tweet>> GetTweetsOfFollowers()
-        {
+        #endregion
 
 
-            return null;
-        }
+
+
+
+
+
+
     }
+
 }

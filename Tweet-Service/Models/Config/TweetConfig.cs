@@ -17,7 +17,7 @@ namespace Tweet_Service.Models.Config
                 .HasColumnType("TIMESTAMP(0)")
                 .IsRequired();
 
-            builder.Property(prop => prop.UserId)
+            builder.Property(prop => prop.UserName)
                 .IsRequired();
 
             builder.Property(prop => prop.UpdatedDate);

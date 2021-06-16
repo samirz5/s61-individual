@@ -42,7 +42,7 @@ namespace UserService.Controllers
             return _context.User.Where(x => x.UserName == userName).FirstOrDefault();
         }
 
-        [HttpGet("/getFollowingUserNames")]
+        [HttpGet("/getFollowingUserNames/{userName}")]
         public ActionResult<IEnumerable<string>> GetFollowingUserNames(string userName)
         {
 

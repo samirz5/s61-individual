@@ -32,10 +32,10 @@ namespace Tweet_Service.Controllers
         }
 
         // GET: /userTweets/{id}
-        [HttpGet("/userTweets/{id}")]
-        public ActionResult<IEnumerable<Tweet>> GetUserTweets(Guid id)
+        [HttpGet("/userTweets/{userName}")]
+        public ActionResult<IEnumerable<Tweet>> GetUserTweets(string userName)
         {
-            var tweets = _tweetService.GetUserTweets(id);
+            var tweets = _tweetService.GetUserTweets(userName);
             return Ok(tweets);
         }
         
@@ -53,10 +53,18 @@ namespace Tweet_Service.Controllers
             return Ok(tweets);
         }
 
-        public ActionResult<IEnumerable<Tweet>> GetTweetsOfFollowers()
+        [HttpGet("/tweetsFollowing/{userName}")]
+        public async Task<ActionResult<IEnumerable<Tweet>>> GetTweetsOfFollowers(string userName)
         {
+            var tweets = await _tweetService.GetTweetsOfFollowers(userName);
+            return Ok(tweets);
+        }
 
-            return null;
+        [HttpGet("/tweetsTrend/{trend}")]
+        public async Task<ActionResult<IEnumerable<Tweet>>> GetTweetsByTrend(string trend)
+        {
+            var tweets = await _tweetService.GetTweetsByTrend(trend);
+            return Ok(tweets);
         }
 
         // GET api/<TweetsController>/5
@@ -122,8 +130,16 @@ namespace Tweet_Service.Controllers
 
         // DELETE api/<TweetsController>/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(Guid? id)
+        public async Task<IActionResult> Delete(Guid id)
         {
+            //TODO: do this also for tweetsheartedbyuser.
+            var mentions = await _context.Mention.Where(x => x.TweetId == id).ToListAsync();
+
+            foreach (var item in mentions)
+            {
+                _context.Mention.Remove(item);
+            }
+
             var todoItem = await _context.Tweet.FindAsync(id);
             if (todoItem == null)
             {
