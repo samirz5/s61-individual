@@ -21,15 +21,28 @@ namespace UserService.Controllers
             _context = context;
         }
 
+
+        [HttpGet("/followingUserNames/{userName}")]
+        public async Task<ActionResult<IEnumerable<Following>>> GetUserNamesFollowing(string userName)
+        {
+            return await _context.Following.Where(x => x.MyUserName == userName).ToListAsync();
+        }
+
+        [HttpGet("/followersUserNames/{userName}")]
+        public async Task<ActionResult<IEnumerable<Following>>> GetUserNamesFollowers(string userName)
+        {
+            return await _context.Following.Where(x => x.FollowingUserName == userName).ToListAsync();
+        }
+
         // GET: api/Followings
-        [HttpGet]
+        /*[HttpGet]
         public async Task<ActionResult<IEnumerable<Following>>> GetFollowing()
         {
             return await _context.Following.ToListAsync();
-        }
+        }*/
 
         // GET: api/Followings/5
-        [HttpGet("{id}")]
+        /*[HttpGet("{id}")]
         public async Task<ActionResult<Following>> GetFollowing(Guid id)
         {
             var following = await _context.Following.FindAsync(id);
@@ -40,11 +53,11 @@ namespace UserService.Controllers
             }
 
             return following;
-        }
+        }*/
 
         // PUT: api/Followings/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        /*[HttpPut("{id}")]
         public async Task<IActionResult> PutFollowing(Guid id, Following following)
         {
             if (id != following.Id)
@@ -71,12 +84,12 @@ namespace UserService.Controllers
             }
 
             return NoContent();
-        }
+        }*/
 
         // POST: api/Followings
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Following>> PostFollowing(Following following)
+        public async Task<ActionResult<Following>> Follow(Following following)
         {
             _context.Following.Add(following);
             await _context.SaveChangesAsync();
@@ -86,7 +99,7 @@ namespace UserService.Controllers
 
         // DELETE: api/Followings/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFollowing(Guid id)
+        public async Task<IActionResult> UnFollow(Guid id)
         {
             var following = await _context.Following.FindAsync(id);
             if (following == null)
