@@ -14,8 +14,8 @@ namespace Tweet_Service.Models.Config
             builder.HasKey(prop => prop.Id);
 
             builder.Property(prop => prop.CreatedDate)
-                .HasColumnType("TIMESTAMP(0)")
-                .IsRequired();
+                .HasColumnType("TIMESTAMP(0)");
+                //.IsRequired();
 
             builder.Property(prop => prop.UserName)
                 .IsRequired();

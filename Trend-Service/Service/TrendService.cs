@@ -44,7 +44,7 @@ namespace Trend_Service.Service
                 trends.Add(trendDTO);
             }
             // TODO: propely need an 
-            return trends.Take(10);
+            return trends.Take(10).OrderByDescending(x=>x.Count);
         }
         
     }

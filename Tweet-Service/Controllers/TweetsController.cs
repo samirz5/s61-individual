@@ -83,7 +83,7 @@ namespace Tweet_Service.Controllers
 
         // POST api/<TweetsController>
         [HttpPost]
-        public async Task<IActionResult> PostAsync([FromBody] Tweet tweet)
+        public async Task<IActionResult> PostAsync(Tweet tweet)
         {
             if (!ModelState.IsValid)
             {

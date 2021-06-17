@@ -21,7 +21,7 @@ namespace Tweet_Service.Service
         public async Task<List<Guid>> GetTweetIdsOfTrend(string trend)
         {
             string endPoint = "tweetIdsByTrend/";
-            List<Guid> tweetIds = await _client.GetFromJsonAsync<List<Guid>>(_urlTrendService + endPoint + trend[1..]);
+            List<Guid> tweetIds = await _client.GetFromJsonAsync<List<Guid>>(_urlTrendService + endPoint + trend);
             return tweetIds;
         }
     }
